@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fleurish Studio</title>
+    <meta name="description" content="The ultimate fashion editor. Upload photos to generate red carpet looks, analyze fashion, create magazine covers, and generate runway music." />
+    <meta property="og:title" content="Fleurish Studio" />
+    <meta property="og:description" content="The ultimate fashion editor. Upload photos to generate red carpet looks, analyze fashion, create magazine covers, and generate runway music." />
+    <script>
+      (function() {
+        try {
+          var globalObj = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof self !== 'undefined' ? self : this;
+          var nativeFetch = (typeof window !== 'undefined' && window.fetch) || (globalObj && globalObj.fetch);
+
+          if (typeof nativeFetch === 'function') {
+            var currentFetch = nativeFetch;
+
+            function defineFetchAccessors(obj) {
+              if (!obj) return;
+              try {
+                Object.defineProperty(obj, 'fetch', {
+                  get: function() {
+                    return currentFetch;
+                  },
+                  set: function(fn) {
+                    currentFetch = fn;
+                  },
+                  configurable: true,
+                  enumerable: true
+                });
+              } catch (_) {}
+            }
+
+            if (typeof Window !== 'undefined' && Window.prototype) {
+              defineFetchAccessors(Window.prototype);
+            }
+            if (typeof window !== 'undefined') {
+              defineFetchAccessors(window);
+            }
+            if (typeof globalThis !== 'undefined') {
+              defineFetchAccessors(globalThis);
+            }
+            if (typeof self !== 'undefined') {
+              defineFetchAccessors(self);
+            }
+          }
+        } catch (e) {
+          console.warn('Fetch environment configuration:', e);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
