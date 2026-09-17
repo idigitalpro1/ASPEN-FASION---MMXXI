@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Star, MessageCircle, Share2, Award, Download, X, Trash2, Copy, Check, Send, Globe, Mail, Sparkles, ExternalLink } from 'lucide-react';
+import { Star, MessageCircle, Share2, Award, Download, X, Trash2, Copy, Check, Send, Globe, Mail, Sparkles, ExternalLink, RefreshCw } from 'lucide-react';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../firebase';
+import { downloadImageLocally } from '../lib/download';
 import { GalleryItem } from './Carousel';
 import { Watermark } from './Watermark';
 
@@ -237,6 +238,7 @@ function GalleryCard({
   handleDownload, 
   handleDelete,
   onShare,
+  onRemix,
   inputs, 
   setInputs,
   isStarred = false
@@ -247,6 +249,7 @@ function GalleryCard({
   handleDownload: (url: string, user: string, tier: string) => void, 
   handleDelete?: (id: number) => void,
   onShare: (item: GalleryItem) => void,
+  onRemix?: (url: string) => void,
   inputs: Record<number, string>, 
   setInputs: (inputs: Record<number, string>) => void,
   isStarred?: boolean
@@ -293,9 +296,20 @@ function GalleryCard({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
+                    handleDownload(item.url, item.user, 'Original');
+                  }}
+                  className="bg-black/60 hover:bg-white hover:text-black text-white p-2 rounded-full transition-all backdrop-blur-sm shadow-md flex items-center justify-center cursor-pointer"
+                  title="Download Fashion Image Locally"
+                  aria-label="Download Fashion Image Locally"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
                     onShare(item);
                   }}
-                  className="bg-black/60 hover:bg-yellow-500 hover:text-black text-white p-2 rounded-full transition-all backdrop-blur-sm shadow-md flex items-center justify-center"
+                  className="bg-black/60 hover:bg-yellow-500 hover:text-black text-white p-2 rounded-full transition-all backdrop-blur-sm shadow-md flex items-center justify-center cursor-pointer"
                   title="Share Look"
                 >
                   <Share2 className="w-4 h-4" />
@@ -345,13 +359,39 @@ function GalleryCard({
           </div>
           <div className="p-4 flex justify-between items-center bg-white z-10 border-t border-zinc-100">
             <span className="font-serif uppercase tracking-widest text-sm truncate mr-2">{item.user}</span>
-            <div className="flex gap-3 shrink-0 items-center">
+            <div className="flex gap-2 sm:gap-3 shrink-0 items-center">
+              {onRemix && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemix(item.url);
+                  }}
+                  className="text-zinc-500 hover:text-black transition-colors p-1 flex items-center gap-1 text-xs uppercase tracking-wider font-semibold cursor-pointer"
+                  title="Remix this look in Studio"
+                  aria-label="Remix this look in Studio"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Remix</span>
+                </button>
+              )}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownload(item.url, item.user, 'Original');
+                }}
+                className="text-zinc-500 hover:text-black transition-colors p-1 flex items-center gap-1 text-xs uppercase tracking-wider font-semibold cursor-pointer"
+                title="Download Fashion Image Locally"
+                aria-label="Download Fashion Image Locally"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Download</span>
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onShare(item);
                 }}
-                className="text-zinc-400 hover:text-black transition-colors p-1 flex items-center gap-1 text-xs uppercase tracking-wider font-semibold"
+                className="text-zinc-500 hover:text-black transition-colors p-1 flex items-center gap-1 text-xs uppercase tracking-wider font-semibold cursor-pointer"
                 title="Share Look"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -469,11 +509,19 @@ function GalleryCard({
               </button>
               <button 
                 onClick={() => onShare(item)}
-                className="flex-1 py-2.5 bg-zinc-900 hover:bg-yellow-500 hover:text-black border border-zinc-800 hover:border-yellow-500 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all font-semibold"
+                className="flex-1 py-2.5 bg-zinc-900 hover:bg-yellow-500 hover:text-black border border-zinc-800 hover:border-yellow-500 text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all font-semibold cursor-pointer"
               >
                 <Share2 className="w-4 h-4" /> Share
               </button>
             </div>
+            {onRemix && (
+              <button 
+                onClick={() => onRemix(item.url)}
+                className="w-full py-2.5 bg-white hover:bg-zinc-200 text-black border border-white text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors font-bold cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-black" /> Remix Look in Studio
+              </button>
+            )}
             <div className="grid grid-cols-3 gap-2">
               <button 
                 onClick={() => handleDownload(item.url, item.user, '1K')}
@@ -504,7 +552,7 @@ function GalleryCard({
   );
 }
 
-export function Gallery({ items, setItems }: { items: GalleryItem[], setItems: (items: GalleryItem[]) => void }) {
+export function Gallery({ items, setItems, onRemix }: { items: GalleryItem[], setItems: (items: GalleryItem[]) => void, onRemix?: (url: string) => void }) {
   const [inputs, setInputs] = useState<Record<number, string>>({});
   const [sharingItem, setSharingItem] = useState<GalleryItem | null>(null);
   const [starredIds, setStarredIds] = useState<Set<number>>(new Set());
@@ -579,52 +627,49 @@ export function Gallery({ items, setItems }: { items: GalleryItem[], setItems: (
     setSharingItem(item);
   };
 
-  const handleDownload = async (url: string, user: string, tier: string) => {
-    try {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = url;
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-      });
+  const handleDownload = async (url: string, user: string, tier: string = 'Original') => {
+    const filename = `aspen-fashion-${user.replace(/\s+/g, '-').toLowerCase()}-${tier}.jpg`;
+    setStarNotice(`Downloading ${user}'s fashion look locally...`);
 
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      
-      if (ctx) {
-        ctx.drawImage(img, 0, 0);
-        
-        // Only add watermark for 1K (Free) tier
-        if (tier === '1K') {
+    // If watermarking 1K tier, draw on canvas first if possible
+    if (tier === '1K') {
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
           ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
           ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
           ctx.shadowBlur = 6;
-          
-          // Aspen Fashion (Moved to bottom left)
-          ctx.font = `bold ${Math.max(24, img.height * 0.04)}px serif`;
-          ctx.fillText('ASPEN FASHION', img.width * 0.03, img.height - img.height * 0.08);
-          
-          // Patrick Henry Sweeney (Directly under Fashion)
-          ctx.font = `${Math.max(10, img.height * 0.015)}px sans-serif`;
-          ctx.fillText('PATRICK HENRY SWEENEY', img.width * 0.03, img.height - img.height * 0.05);
+          ctx.font = `bold ${Math.max(24, canvas.height * 0.04)}px serif`;
+          ctx.fillText('ASPEN FASHION', canvas.width * 0.03, canvas.height - canvas.height * 0.08);
+          ctx.font = `${Math.max(10, canvas.height * 0.015)}px sans-serif`;
+          ctx.fillText('PATRICK HENRY SWEENEY', canvas.width * 0.03, canvas.height - canvas.height * 0.05);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+          await downloadImageLocally(dataUrl, filename);
+          setStarNotice(`Saved ${filename} locally!`);
+          setTimeout(() => setStarNotice(null), 3000);
+          return;
         }
-        
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
-        const a = document.createElement('a');
-        a.href = dataUrl;
-        a.download = `aspen-fashion-${user.replace(/\s+/g, '-').toLowerCase()}-${tier}.jpg`;
-        a.click();
+      } catch (e) {
+        console.warn('Canvas watermark failed, proceeding with direct download:', e);
       }
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `aspen-fashion-${user.replace(/\s+/g, '-').toLowerCase()}-${tier}.jpg`;
-      a.target = '_blank';
-      a.click();
+    }
+
+    const success = await downloadImageLocally(url, filename);
+    if (success) {
+      setStarNotice(`Saved ${filename} locally!`);
+      setTimeout(() => setStarNotice(null), 3000);
     }
   };
 
@@ -648,6 +693,7 @@ export function Gallery({ items, setItems }: { items: GalleryItem[], setItems: (
               handleDownload={handleDownload}
               handleDelete={handleDelete}
               onShare={handleShare}
+              onRemix={onRemix}
               inputs={inputs}
               setInputs={setInputs}
               isStarred={starredIds.has(item.id)}

@@ -103,5 +103,43 @@ service cloud.firestore {
                     request.resource.data.subscribedAt is timestamp;
       allow read, update, delete: if false;
     }
+
+    // Magazine $50 Placements
+    function isValidMagazinePlacement(data) {
+      return hasRequiredFields(['userId', 'designer', 'imageUrl', 'amountPaid', 'receiptId', 'createdAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             data.designer is string && data.designer.size() > 0 && data.designer.size() < 128 &&
+             data.imageUrl is string && data.imageUrl.size() > 0 && data.imageUrl.size() < 1000000 &&
+             data.amountPaid is number && data.amountPaid >= 0 &&
+             data.receiptId is string && data.receiptId.size() > 0 && data.receiptId.size() < 64 &&
+             data.createdAt is timestamp;
+    }
+
+    match /magazine_placements/{placementId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+                    isValidMagazinePlacement(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Catalog Items
+    function isValidCatalogItem(data) {
+      return hasRequiredFields(['userId', 'title', 'designer', 'imageUrl', 'createdAt']) &&
+             data.userId is string && data.userId.size() > 0 && data.userId.size() < 128 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.designer is string && data.designer.size() > 0 && data.designer.size() < 128 &&
+             data.imageUrl is string && data.imageUrl.size() > 0 && data.imageUrl.size() < 1000000 &&
+             data.createdAt is timestamp;
+    }
+
+    match /catalog_items/{itemId} {
+      allow read: if true;
+      allow create: if isAuthenticated() &&
+                    isValidCatalogItem(request.resource.data) &&
+                    request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
   }
 }

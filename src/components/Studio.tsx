@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Sparkles, Volume2, Loader2, Download, Undo2, Redo2, Crop as CropIcon, Layers, Check, X, ShieldAlert, Sparkle } from 'lucide-react';
+import { Upload, Sparkles, Volume2, Loader2, Download, Undo2, Redo2, Crop as CropIcon, Layers, Check, X, ShieldAlert, Sparkle, RefreshCw, User, Users } from 'lucide-react';
 import { GoogleGenAI, Modality } from '@google/genai';
 import Markdown from 'react-markdown';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
@@ -90,19 +90,26 @@ const SIZES = ["1K (Free)", "2K ($2)", "4K ($4)"];
 export function Studio({ 
   onImageGenerated, 
   coverQuote, 
-  setCoverQuote 
+  setCoverQuote,
+  remixImage,
+  onClearRemix
 }: { 
   onImageGenerated: (url: string) => void,
   coverQuote: string | null,
-  setCoverQuote: (quote: string | null) => void
+  setCoverQuote: (quote: string | null) => void,
+  remixImage?: string | null,
+  onClearRemix?: () => void
 }) {
   const [historyData, setHistoryData] = useState({
     history: [{
       selectedFile: null as File | null,
-      previewUrl: null as string | null,
+      previewUrl: remixImage || null as string | null,
       backdrop: BACKDROPS[0],
       selectedBackdrops: [BACKDROPS[0]] as string[],
       isMultiSelect: false,
+      modelMode: 'solo' as 'solo' | 'models',
+      menModelsCount: 0,
+      womenModelsCount: 0,
       period: PERIODS[0],
       age: AGES[0],
       imageSize: SIZES[0],
@@ -114,6 +121,18 @@ export function Studio({
     }],
     index: 0
   });
+
+  // Handle incoming remix image
+  useEffect(() => {
+    if (remixImage) {
+      pushState({
+        previewUrl: remixImage,
+        selectedFile: null,
+        generatedImageUrl: null,
+        analysis: null
+      });
+    }
+  }, [remixImage]);
 
   const pushState = (newStatePatch: Partial<typeof historyData.history[0]>) => {
     setHistoryData(prev => {
@@ -151,6 +170,9 @@ export function Studio({
     backdrop,
     selectedBackdrops = [BACKDROPS[0]],
     isMultiSelect = false,
+    modelMode = 'solo',
+    menModelsCount = 0,
+    womenModelsCount = 0,
     period,
     age,
     imageSize,
@@ -159,6 +181,10 @@ export function Studio({
     generatedImageUrl,
     analysis
   } = historyData.history[historyData.index];
+
+  const setModelMode = (val: 'solo' | 'models') => pushState({ modelMode: val });
+  const setMenModelsCount = (val: number) => pushState({ menModelsCount: val });
+  const setWomenModelsCount = (val: number) => pushState({ womenModelsCount: val });
 
   const setBackdrop = (val: string) => {
     pushState({ 
@@ -311,15 +337,48 @@ export function Studio({
     });
   };
 
+  const getImageData = async (file: File | null, url: string | null): Promise<{ base64: string; mimeType: string }> => {
+    if (file) {
+      const base64 = await fileToBase64(file);
+      return { base64, mimeType: file.type || 'image/jpeg' };
+    }
+    if (url) {
+      if (url.startsWith('data:')) {
+        const commaIndex = url.indexOf(',');
+        const mimeMatch = url.substring(0, commaIndex).match(/:(.*?);/);
+        const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+        const base64 = url.substring(commaIndex + 1);
+        return { base64, mimeType };
+      }
+      // Remote URL - fetch blob and read as base64
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            const parts = reader.result.split(',');
+            resolve({ base64: parts[1], mimeType: blob.type || 'image/jpeg' });
+          } else {
+            reject(new Error("Failed to process remix image"));
+          }
+        };
+        reader.onerror = reject;
+      });
+    }
+    throw new Error("No image file or URL available to generate");
+  };
+
   const generateImage = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile && !previewUrl) return;
     setIsGenerating(true);
     try {
       // @ts-ignore
       const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
       const ai = new GoogleGenAI({ apiKey });
       
-      const base64Data = await fileToBase64(selectedFile);
+      const { base64: base64Data, mimeType } = await getImageData(selectedFile, previewUrl);
       
       const activeBackdrops = isMultiSelect && selectedBackdrops && selectedBackdrops.length > 0 
         ? selectedBackdrops 
@@ -332,7 +391,23 @@ export function Studio({
         backdropDetails = `${activeBackdrops[0]} backdrop`;
       }
 
-      let prompt = `A high-fashion editorial photo. Include groups of up to three people and high-fashion models if possible. Place this person in ${backdropDetails}.`;
+      // Composition / Models specification
+      let modelInstructions = "";
+      if (modelMode === 'solo' || (menModelsCount === 0 && womenModelsCount === 0)) {
+        modelInstructions = "Solo photo shoot composition: feature ONLY this single person alone in the frame (solo high-fashion portrait/look, single subject, clean centered composition, absolutely NO background people, extra faces, or other models).";
+      } else {
+        const modelCountsList: string[] = [];
+        if (menModelsCount > 0) {
+          modelCountsList.push(`${menModelsCount} male fashion model${menModelsCount > 1 ? 's' : ''}`);
+        }
+        if (womenModelsCount > 0) {
+          modelCountsList.push(`${womenModelsCount} female fashion model${womenModelsCount > 1 ? 's' : ''}`);
+        }
+        const modelsText = modelCountsList.join(' and ');
+        modelInstructions = `Group fashion editorial composition: include high-fashion models posing naturally alongside the subject in the scene (${modelsText}). The accompanying models should be dressed in complementary haute couture runway styling, interacting cohesively in a luxury magazine editorial spread.`;
+      }
+
+      let prompt = `A high-fashion editorial photo. ${modelInstructions} Place the subject in ${backdropDetails}.`;
 
       // Specific scene atmosphere enhancements based on selections
       if (activeBackdrops.some(b => b.includes("Après-Ski Aspen") || b.includes("with Models"))) {
@@ -361,7 +436,7 @@ export function Studio({
         {
           inlineData: {
             data: base64Data,
-            mimeType: selectedFile.type,
+            mimeType: mimeType || 'image/jpeg',
           },
         }
       ];
@@ -374,7 +449,7 @@ export function Studio({
             mimeType: customBackdropFile.type,
           }
         });
-        prompt = `A high-fashion editorial photo. Include groups of up to three people if possible. Place the person from the first image onto the background shown in the second image. Add a subtle background blur (bokeh) effect to the backdrop image to create depth of field.`;
+        prompt = `A high-fashion editorial photo. ${modelInstructions} Place the person from the first image onto the background shown in the second image. Add a subtle background blur (bokeh) effect to the backdrop image to create depth of field.`;
       }
 
       if (period !== "None (Preserve Original Style)") {
@@ -537,7 +612,37 @@ export function Studio({
     <div className="flex flex-col gap-8 pb-20">
       {/* Top Hero Section */}
       <div className="bg-white p-6 border border-zinc-200 shadow-sm">
-        <h2 className="text-xl font-serif uppercase tracking-widest mb-6">1. Original Photo</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-serif uppercase tracking-widest">1. Original Photo</h2>
+          {previewUrl && !selectedFile && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded bg-amber-500/15 border border-amber-500/30 text-amber-900">
+              <RefreshCw className="w-3.5 h-3.5 text-amber-700 animate-spin-slow" />
+              Remix Mode Active
+            </span>
+          )}
+        </div>
+
+        {previewUrl && !selectedFile && (
+          <div className="mb-4 flex items-center justify-between bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Remixing Image:</strong> Loaded into Studio! Pick Solo or add Models (Men & Women), select your backdrop or fashion era, and click Generate.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                pushState({ previewUrl: null, selectedFile: null });
+                if (onClearRemix) onClearRemix();
+              }}
+              className="ml-3 text-zinc-600 hover:text-black font-semibold uppercase tracking-wider text-[10px] underline cursor-pointer shrink-0"
+            >
+              Clear
+            </button>
+          </div>
+        )}
+
         {!previewUrl ? (
           <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-zinc-300 border-dashed hover:bg-zinc-50 transition-colors cursor-pointer">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
@@ -744,6 +849,240 @@ export function Studio({
               )}
             </div>
 
+            {/* Solo Pic or Accompanying Models Section */}
+            <div className="border-t border-zinc-200 pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-zinc-800 uppercase tracking-wider flex items-center gap-2">
+                  <Users className="w-4 h-4 text-zinc-700" />
+                  <span>Models & Shot Composition</span>
+                </label>
+                <span className="text-[11px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200">
+                  {modelMode === 'solo' || (menModelsCount === 0 && womenModelsCount === 0) 
+                    ? 'Solo Pic (1 Subject)' 
+                    : `Group: ${womenModelsCount} Women, ${menModelsCount} Men`}
+                </span>
+              </div>
+
+              {/* Composition Mode Selector */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModelMode('solo');
+                    setMenModelsCount(0);
+                    setWomenModelsCount(0);
+                  }}
+                  className={`p-3 border text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    modelMode === 'solo' && menModelsCount === 0 && womenModelsCount === 0
+                      ? 'bg-black text-white border-black shadow-sm'
+                      : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-300'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Solo Pic</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModelMode('models');
+                    if (menModelsCount === 0 && womenModelsCount === 0) {
+                      setWomenModelsCount(1);
+                    }
+                  }}
+                  className={`p-3 border text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                    modelMode === 'models' || menModelsCount > 0 || womenModelsCount > 0
+                      ? 'bg-black text-white border-black shadow-sm'
+                      : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border-zinc-300'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>With Models</span>
+                </button>
+              </div>
+
+              {/* Mode Selection Dropdown */}
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-zinc-600 uppercase tracking-wider mb-1.5">
+                  Composition Mode
+                </label>
+                <select
+                  value={modelMode}
+                  onChange={e => {
+                    const mode = e.target.value as 'solo' | 'models';
+                    setModelMode(mode);
+                    if (mode === 'solo') {
+                      setMenModelsCount(0);
+                      setWomenModelsCount(0);
+                    } else if (menModelsCount === 0 && womenModelsCount === 0) {
+                      setWomenModelsCount(1);
+                    }
+                  }}
+                  className="w-full border border-zinc-300 p-2.5 bg-white text-sm focus:ring-black focus:border-black font-medium"
+                >
+                  <option value="solo">Solo Pic — Subject Alone (No Other Models)</option>
+                  <option value="models">With Models — High-Fashion Group Editorial</option>
+                </select>
+              </div>
+
+              {/* Model Number Dropdowns (Men & Women) */}
+              <div className="bg-zinc-50 border border-zinc-200 p-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Women Models Dropdown */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Women Models</span>
+                      <span className="text-[10px] text-zinc-500 lowercase font-normal">{womenModelsCount} chosen</span>
+                    </label>
+                    <select
+                      value={womenModelsCount}
+                      onChange={e => {
+                        const val = parseInt(e.target.value, 10) || 0;
+                        setWomenModelsCount(val);
+                        if (val > 0 || menModelsCount > 0) {
+                          setModelMode('models');
+                        } else {
+                          setModelMode('solo');
+                        }
+                      }}
+                      className="w-full border border-zinc-300 p-2.5 bg-white text-sm focus:ring-black focus:border-black font-medium"
+                    >
+                      <option value={0}>0 Women (None)</option>
+                      <option value={1}>1 Female Model</option>
+                      <option value={2}>2 Female Models</option>
+                      <option value={3}>3 Female Models</option>
+                      <option value={4}>4 Female Models</option>
+                      <option value={5}>5 Female Models</option>
+                    </select>
+                  </div>
+
+                  {/* Men Models Dropdown */}
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                      <span>Men Models</span>
+                      <span className="text-[10px] text-zinc-500 lowercase font-normal">{menModelsCount} chosen</span>
+                    </label>
+                    <select
+                      value={menModelsCount}
+                      onChange={e => {
+                        const val = parseInt(e.target.value, 10) || 0;
+                        setMenModelsCount(val);
+                        if (val > 0 || womenModelsCount > 0) {
+                          setModelMode('models');
+                        } else {
+                          setModelMode('solo');
+                        }
+                      }}
+                      className="w-full border border-zinc-300 p-2.5 bg-white text-sm focus:ring-black focus:border-black font-medium"
+                    >
+                      <option value={0}>0 Men (None)</option>
+                      <option value={1}>1 Male Model</option>
+                      <option value={2}>2 Male Models</option>
+                      <option value={3}>3 Male Models</option>
+                      <option value={4}>4 Male Models</option>
+                      <option value={5}>5 Male Models</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="pt-2 border-t border-zinc-200">
+                  <span className="block text-[10px] uppercase tracking-widest text-zinc-500 mb-2 font-semibold">Quick Model Presets</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelMode('solo');
+                        setMenModelsCount(0);
+                        setWomenModelsCount(0);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 border rounded-full transition-colors cursor-pointer ${
+                        modelMode === 'solo' && menModelsCount === 0 && womenModelsCount === 0
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-zinc-700 border-zinc-300 hover:border-black'
+                      }`}
+                    >
+                      Solo Pic (0)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelMode('models');
+                        setWomenModelsCount(1);
+                        setMenModelsCount(0);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 border rounded-full transition-colors cursor-pointer ${
+                        modelMode === 'models' && womenModelsCount === 1 && menModelsCount === 0
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-zinc-700 border-zinc-300 hover:border-black'
+                      }`}
+                    >
+                      +1 Woman
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelMode('models');
+                        setMenModelsCount(1);
+                        setWomenModelsCount(0);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 border rounded-full transition-colors cursor-pointer ${
+                        modelMode === 'models' && menModelsCount === 1 && womenModelsCount === 0
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-zinc-700 border-zinc-300 hover:border-black'
+                      }`}
+                    >
+                      +1 Man
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelMode('models');
+                        setMenModelsCount(1);
+                        setWomenModelsCount(1);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 border rounded-full transition-colors cursor-pointer ${
+                        modelMode === 'models' && menModelsCount === 1 && womenModelsCount === 1
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-zinc-700 border-zinc-300 hover:border-black'
+                      }`}
+                    >
+                      Couples (1M + 1W)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelMode('models');
+                        setMenModelsCount(1);
+                        setWomenModelsCount(2);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 border rounded-full transition-colors cursor-pointer ${
+                        modelMode === 'models' && menModelsCount === 1 && womenModelsCount === 2
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-zinc-700 border-zinc-300 hover:border-black'
+                      }`}
+                    >
+                      Trio (1M + 2W)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModelMode('models');
+                        setMenModelsCount(2);
+                        setWomenModelsCount(2);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 border rounded-full transition-colors cursor-pointer ${
+                        modelMode === 'models' && menModelsCount === 2 && womenModelsCount === 2
+                          ? 'bg-black text-white border-black'
+                          : 'bg-white text-zinc-700 border-zinc-300 hover:border-black'
+                      }`}
+                    >
+                      Entourage (2M + 2W)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-zinc-700 mb-2 uppercase tracking-wider">Fashion Period Remix</label>
               <select 
@@ -786,8 +1125,8 @@ export function Studio({
                 generateImage();
               }
             }}
-            disabled={!selectedFile || isGenerating || (backdrop === "Custom Upload..." && !customBackdropFile)}
-            className="mt-6 w-full flex items-center justify-center gap-2 bg-black text-white p-4 uppercase tracking-widest font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50"
+            disabled={(!selectedFile && !previewUrl) || isGenerating || (backdrop === "Custom Upload..." && !customBackdropFile)}
+            className="mt-6 w-full flex items-center justify-center gap-2 bg-black text-white p-4 uppercase tracking-widest font-medium hover:bg-zinc-800 transition-colors disabled:opacity-50 cursor-pointer"
           >
             {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
             {isGenerating ? 'Generating Magic...' : imageSize === "1K (Free)" ? 'Step onto the Red Carpet' : `Add to Cart - ${imageSize.includes('2K') ? '$2' : '$4'}`}
@@ -931,12 +1270,48 @@ export function Studio({
             )}
           </div>
 
+          {generatedImageUrl && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  pushState({
+                    previewUrl: generatedImageUrl,
+                    selectedFile: null,
+                    generatedImageUrl: null,
+                    analysis: null
+                  });
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full py-3 bg-zinc-900 hover:bg-black text-white uppercase tracking-wider text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-sm"
+                title="Send this generated look back into Step 1 to remix with new models, backdrops, or fashion eras"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span>Remix Look in Studio</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const a = document.createElement('a');
+                  a.href = generatedImageUrl;
+                  a.download = `aspen-fashion-${Date.now()}.png`;
+                  a.click();
+                }}
+                className="w-full py-3 border border-zinc-400 hover:border-black text-black bg-white hover:bg-zinc-50 uppercase tracking-wider text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                title="Download this generated look"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Look</span>
+              </button>
+            </div>
+          )}
+
           {(generatedImageUrl || previewUrl) && (
-            <div className="mt-6">
+            <div className="mt-3">
               <button
                 onClick={() => analyzeOutfit()}
                 disabled={isAnalyzing}
-                className="w-full border-2 border-black text-black p-3 uppercase tracking-widest font-medium hover:bg-zinc-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full border-2 border-black text-black p-3 uppercase tracking-widest font-medium hover:bg-zinc-50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                 {isAnalyzing ? 'Analyzing...' : 'Analyze Outfit & Shop'}

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { Star, ChevronLeft, ChevronRight, Trash2, RefreshCw, Share2 } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight, Trash2, RefreshCw, Share2, Download } from 'lucide-react';
+import { downloadImageLocally } from '../lib/download';
 
 export interface GalleryItem {
   id: number;
@@ -91,15 +92,22 @@ export function Carousel({
                 </button>
                 <div className="flex items-center gap-1 w-full justify-center">
                   <button 
+                    onClick={() => downloadImageLocally(pic.url, `fashion-look-${pic.user.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg`)}
+                    className="bg-zinc-800 hover:bg-white hover:text-black text-white text-[9px] p-1.5 rounded transition-colors flex items-center justify-center cursor-pointer"
+                    title="Download Fashion Image Locally"
+                  >
+                    <Download className="w-2.5 h-2.5" />
+                  </button>
+                  <button 
                     onClick={() => handleQuickShare(pic)}
-                    className="bg-zinc-800 hover:bg-yellow-500 hover:text-black text-white text-[9px] p-1.5 rounded transition-colors flex-1 flex items-center justify-center gap-1"
+                    className="bg-zinc-800 hover:bg-yellow-500 hover:text-black text-white text-[9px] p-1.5 rounded transition-colors flex-1 flex items-center justify-center gap-1 cursor-pointer"
                     title="Share Look"
                   >
                     <Share2 className="w-2.5 h-2.5" /> Share
                   </button>
                   <button 
                     onClick={() => handleDelete(pic.id)}
-                    className="text-red-400 hover:text-red-300 transition-colors p-1.5 hover:bg-zinc-800 rounded"
+                    className="text-red-400 hover:text-red-300 transition-colors p-1.5 hover:bg-zinc-800 rounded cursor-pointer"
                     title="Delete"
                   >
                     <Trash2 className="w-3 h-3" />

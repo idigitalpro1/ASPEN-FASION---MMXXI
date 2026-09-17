@@ -1,6 +1,6 @@
 {
   "name": "Fleurish Studio",
-  "description": "The ultimate fashion editor. Upload photos to generate red carpet looks, analyze fashion, create magazine covers, and generate runway music.",
+  "description": "The ultimate fashion editor. Generate red carpet looks, order $50 magazine placements, build curated lookbook catalogs, create editorial covers, and produce runway audio.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

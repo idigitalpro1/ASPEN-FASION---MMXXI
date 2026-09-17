@@ -93,6 +93,133 @@
         }
       },
       "required": ["userId", "itemId", "stars", "type", "createdAt"]
+    },
+    "MagazinePlacement": {
+      "title": "MagazinePlacement",
+      "description": "An editorial $50 placement in the Aspen Fashion magazine and lookbook catalog.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The ID of the user who ordered the placement."
+        },
+        "userEmail": {
+          "type": "string",
+          "description": "The email of the user who ordered the placement."
+        },
+        "designer": {
+          "type": "string",
+          "description": "Designer or model name."
+        },
+        "brand": {
+          "type": "string",
+          "description": "Fashion label or brand name."
+        },
+        "lookTitle": {
+          "type": "string",
+          "description": "Title of the look or collection."
+        },
+        "publication": {
+          "type": "string",
+          "description": "Target publication/magazine edition."
+        },
+        "category": {
+          "type": "string",
+          "description": "Fashion category (Outerwear, Couture, etc.)."
+        },
+        "price": {
+          "type": "string",
+          "description": "Garment price or availability."
+        },
+        "quote": {
+          "type": "string",
+          "description": "Editorial quote or designer statement."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Image URL of the placed fashion look."
+        },
+        "amountPaid": {
+          "type": "number",
+          "description": "Amount paid in USD ($50)."
+        },
+        "receiptId": {
+          "type": "string",
+          "description": "Official confirmation receipt code."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["placed", "pending", "published"],
+          "description": "Placement status."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of placement order."
+        }
+      },
+      "required": ["userId", "designer", "imageUrl", "amountPaid", "receiptId", "createdAt"]
+    },
+    "CatalogItem": {
+      "title": "CatalogItem",
+      "description": "A garment or editorial piece listed in the official Aspen Fashion Catalog.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Creator user ID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the catalog piece."
+        },
+        "designer": {
+          "type": "string",
+          "description": "Designer or brand name."
+        },
+        "collection": {
+          "type": "string",
+          "description": "Collection or season name."
+        },
+        "season": {
+          "type": "string",
+          "description": "Fashion season."
+        },
+        "category": {
+          "type": "string",
+          "description": "Category (Outerwear, Eveningwear, etc.)."
+        },
+        "price": {
+          "type": "string",
+          "description": "Retail or wholesale price."
+        },
+        "materials": {
+          "type": "string",
+          "description": "Fabric & material composition."
+        },
+        "description": {
+          "type": "string",
+          "description": "Editorial description."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Product or editorial photo URL."
+        },
+        "isPlacement": {
+          "type": "boolean",
+          "description": "Whether this was a verified $50 placement."
+        },
+        "placementReceipt": {
+          "type": "string",
+          "description": "Receipt ID if placed."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Listing date."
+        }
+      },
+      "required": ["userId", "title", "designer", "imageUrl", "createdAt"]
     }
   },
   "firestore": {
@@ -113,6 +240,18 @@
         "$ref": "#/entities/StarInteraction"
       },
       "description": "Stores user star ratings and interactions for gallery items."
+    },
+    "/magazine_placements/{placementId}": {
+      "schema": {
+        "$ref": "#/entities/MagazinePlacement"
+      },
+      "description": "Stores user $50 magazine placement orders."
+    },
+    "/catalog_items/{itemId}": {
+      "schema": {
+        "$ref": "#/entities/CatalogItem"
+      },
+      "description": "Stores pieces in the fashion catalog and lookbook."
     }
   }
 }

@@ -17,7 +17,9 @@ import { MusicPlayer } from './components/MusicPlayer';
 import { Carousel, GalleryItem } from './components/Carousel';
 import { Login } from './components/Login';
 import { SubscribeModal } from './components/SubscribeModal';
-import { Camera, BookOpen, Image as ImageIcon, Mic, Video } from 'lucide-react';
+import { Catalog } from './components/Catalog';
+import { PlacementModal } from './components/PlacementModal';
+import { Camera, BookOpen, Image as ImageIcon, Mic, Video, Layers, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const INITIAL_GALLERY: GalleryItem[] = [
@@ -61,11 +63,34 @@ const INITIAL_GALLERY: GalleryItem[] = [
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState<'studio' | 'magazine' | 'gallery' | 'podcast' | 'runway'>('studio');
+  const [activeTab, setActiveTab] = useState<'studio' | 'magazine' | 'catalog' | 'gallery' | 'podcast' | 'runway'>('studio');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [remixImageUrl, setRemixImageUrl] = useState<string | null>(null);
   const [coverQuote, setCoverQuote] = useState<string | null>(null);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(INITIAL_GALLERY);
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
+  const [isPlacementModalOpen, setIsPlacementModalOpen] = useState(false);
+  const [placementTargetImage, setPlacementTargetImage] = useState<string | null>(null);
+
+  const handleRemix = (url: string) => {
+    setRemixImageUrl(url);
+    setGeneratedImage(url);
+    setActiveTab('studio');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenPlacementModal = (img?: string) => {
+    setPlacementTargetImage(img || generatedImage || (galleryItems.length > 0 ? galleryItems[0].url : null));
+    setIsPlacementModalOpen(true);
+  };
+
+  const handleOpenInMagazine = (imageUrl: string, quote?: string) => {
+    setGeneratedImage(imageUrl);
+    if (quote) {
+      setCoverQuote(quote);
+    }
+    setActiveTab('magazine');
+  };
 
   // Update the latest gallery item's quote when it becomes available
   useEffect(() => {
@@ -207,7 +232,17 @@ export default function App() {
               <div className="flex flex-col justify-center">
                 <h1 className="text-xl sm:text-2xl font-serif uppercase tracking-widest font-bold leading-none">ASPEN FASHION</h1>
               </div>
-              <MusicPlayer />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleOpenPlacementModal()}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-black text-xs font-serif uppercase tracking-wider font-bold rounded-full shadow-sm transition-all cursor-pointer"
+                  title="Purchase $50 Editorial Placement in Aspen Fashion Magazine"
+                >
+                  <Award className="w-3.5 h-3.5 text-black" />
+                  <span>$50 Placement</span>
+                </button>
+                <MusicPlayer />
+              </div>
             </div>
           </header>
 
@@ -222,7 +257,13 @@ export default function App() {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
                 >
-                  <Studio onImageGenerated={handleImageGenerated} coverQuote={coverQuote} setCoverQuote={setCoverQuote} />
+                  <Studio 
+                    onImageGenerated={handleImageGenerated} 
+                    coverQuote={coverQuote} 
+                    setCoverQuote={setCoverQuote} 
+                    remixImage={remixImageUrl}
+                    onClearRemix={() => setRemixImageUrl(null)}
+                  />
                 </motion.div>
               )}
               {activeTab === 'magazine' && (
@@ -233,7 +274,30 @@ export default function App() {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
                 >
-                  <Magazine generatedImage={generatedImage} coverQuote={coverQuote} />
+                  <Magazine 
+                    generatedImage={generatedImage} 
+                    coverQuote={coverQuote} 
+                    items={galleryItems} 
+                    onOpenPlacementModal={handleOpenPlacementModal}
+                    onNavigateToCatalog={() => setActiveTab('catalog')}
+                    onRemix={handleRemix}
+                  />
+                </motion.div>
+              )}
+              {activeTab === 'catalog' && (
+                <motion.div
+                  key="catalog"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                >
+                  <Catalog 
+                    onOpenPlacementModal={handleOpenPlacementModal}
+                    onOpenInMagazine={handleOpenInMagazine}
+                    galleryItems={galleryItems}
+                    onRemix={handleRemix}
+                  />
                 </motion.div>
               )}
               {activeTab === 'gallery' && (
@@ -244,7 +308,11 @@ export default function App() {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25, ease: "easeInOut" }}
                 >
-                  <Gallery items={galleryItems} setItems={setGalleryItems} />
+                  <Gallery 
+                    items={galleryItems} 
+                    setItems={setGalleryItems} 
+                    onRemix={handleRemix}
+                  />
                 </motion.div>
               )}
               {activeTab === 'podcast' && (
@@ -275,38 +343,45 @@ export default function App() {
           {/* Bottom Navigation */}
           <nav className="bg-white/80 backdrop-blur-md border-t border-zinc-200 w-full z-20 sm:relative sm:border-none sm:bg-transparent">
             <div className="max-w-md mx-auto sm:max-w-none sm:flex sm:justify-center sm:pb-4">
-              <div className="flex justify-around sm:justify-center sm:gap-8 p-4 sm:p-0 flex-wrap">
+              <div className="flex justify-around sm:justify-center sm:gap-6 md:gap-8 p-4 sm:p-0 flex-wrap">
                 <button
                   onClick={() => setActiveTab('studio')}
-                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-4 py-2 rounded-full transition-colors ${activeTab === 'studio' ? 'text-black sm:bg-white/80 sm:shadow-sm' : 'text-zinc-600 hover:text-black'}`}
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-colors ${activeTab === 'studio' ? 'text-black sm:bg-white/80 sm:shadow-sm font-semibold' : 'text-zinc-600 hover:text-black'}`}
                 >
                   <Camera className="w-5 h-5" />
                   <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">Studio</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('runway')}
-                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-4 py-2 rounded-full transition-colors ${activeTab === 'runway' ? 'text-black sm:bg-white/80 sm:shadow-sm' : 'text-zinc-600 hover:text-black'}`}
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-colors ${activeTab === 'runway' ? 'text-black sm:bg-white/80 sm:shadow-sm font-semibold' : 'text-zinc-600 hover:text-black'}`}
                 >
                   <Video className="w-5 h-5" />
                   <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">Runway</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('magazine')}
-                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-4 py-2 rounded-full transition-colors ${activeTab === 'magazine' ? 'text-black sm:bg-white/80 sm:shadow-sm' : 'text-zinc-600 hover:text-black'}`}
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-colors ${activeTab === 'magazine' ? 'text-black sm:bg-white/80 sm:shadow-sm font-semibold' : 'text-zinc-600 hover:text-black'}`}
                 >
                   <BookOpen className="w-5 h-5" />
                   <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">Magazine</span>
                 </button>
                 <button
+                  onClick={() => setActiveTab('catalog')}
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-colors ${activeTab === 'catalog' ? 'text-black sm:bg-white/80 sm:shadow-sm font-semibold' : 'text-zinc-600 hover:text-black'}`}
+                >
+                  <Layers className="w-5 h-5" />
+                  <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">Catalog</span>
+                </button>
+                <button
                   onClick={() => setActiveTab('gallery')}
-                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-4 py-2 rounded-full transition-colors ${activeTab === 'gallery' ? 'text-black sm:bg-white/80 sm:shadow-sm' : 'text-zinc-600 hover:text-black'}`}
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-colors ${activeTab === 'gallery' ? 'text-black sm:bg-white/80 sm:shadow-sm font-semibold' : 'text-zinc-600 hover:text-black'}`}
                 >
                   <ImageIcon className="w-5 h-5" />
                   <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">Gallery</span>
                 </button>
                 <button
                   onClick={() => setActiveTab('podcast')}
-                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-4 py-2 rounded-full transition-colors ${activeTab === 'podcast' ? 'text-black sm:bg-white/80 sm:shadow-sm' : 'text-zinc-600 hover:text-black'}`}
+                  className={`flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-full transition-colors ${activeTab === 'podcast' ? 'text-black sm:bg-white/80 sm:shadow-sm font-semibold' : 'text-zinc-600 hover:text-black'}`}
                 >
                   <Mic className="w-5 h-5" />
                   <span className="text-xs sm:text-sm font-medium uppercase tracking-wider">Podcast</span>
@@ -316,20 +391,32 @@ export default function App() {
           </nav>
 
           {/* Bottom Carousel */}
-          <Carousel items={galleryItems} setItems={setGalleryItems} onRemix={(url) => {
-            setGeneratedImage(url);
-            setActiveTab('studio');
-          }} />
+          <Carousel items={galleryItems} setItems={setGalleryItems} onRemix={handleRemix} />
 
           {/* Footer Links */}
-          <footer className="bg-zinc-950 text-zinc-400 py-4 text-center text-xs uppercase tracking-widest border-t border-zinc-800 flex flex-col sm:flex-row justify-center items-center gap-4">
+          <footer className="bg-zinc-950 text-zinc-400 py-5 text-center text-xs uppercase tracking-widest border-t border-zinc-800 flex flex-col sm:flex-row justify-center items-center gap-4 px-4">
             <a href="https://aspenfashion.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
               Back to AspenFashion.com
             </a>
             <span className="hidden sm:inline">•</span>
             <button 
+              onClick={() => handleOpenPlacementModal()}
+              className="hover:text-amber-300 transition-colors font-bold text-amber-400 flex items-center gap-1 cursor-pointer"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>$50 MAGAZINE PLACEMENT</span>
+            </button>
+            <span className="hidden sm:inline">•</span>
+            <button 
+              onClick={() => setActiveTab('catalog')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              LOOKBOOK CATALOG
+            </button>
+            <span className="hidden sm:inline">•</span>
+            <button 
               onClick={() => setIsSubscribeModalOpen(true)}
-              className="hover:text-white transition-colors font-bold text-white"
+              className="hover:text-white transition-colors font-bold text-white cursor-pointer"
             >
               SUBSCRIBE
             </button>
@@ -340,6 +427,17 @@ export default function App() {
       <SubscribeModal 
         isOpen={isSubscribeModalOpen} 
         onClose={() => setIsSubscribeModalOpen(false)} 
+      />
+
+      <PlacementModal 
+        isOpen={isPlacementModalOpen}
+        onClose={() => setIsPlacementModalOpen(false)}
+        initialImage={placementTargetImage}
+        galleryItems={galleryItems}
+        onNavigateToCatalog={() => {
+          setIsPlacementModalOpen(false);
+          setActiveTab('catalog');
+        }}
       />
     </ApiKeyWrapper>
   );
