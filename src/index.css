@@ -1,1 +1,40 @@
 @import "tailwindcss";
+
+@media print {
+  /* Hide all app chrome, headers, navigation bars, footer, carousels, and UI buttons */
+  header,
+  nav,
+  footer,
+  .no-print,
+  [data-no-print="true"],
+  button,
+  .group\/carousel,
+  #bottom-nav {
+    display: none !important;
+  }
+
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset main wrapper backgrounds */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  @page {
+    size: auto;
+    margin: 0mm;
+  }
+}

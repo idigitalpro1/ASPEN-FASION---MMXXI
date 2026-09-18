@@ -14,6 +14,7 @@ export const BACKDROP_CATEGORIES = [
       "Summiting 14ers (Colorado 14,000ft Peak Alpine Adventure)",
       "Après-Ski Aspen with Models (Alpine Lounge & Fur Couture)",
       "Poolside Hotel Jerome (Aspen Historic Luxury Sunbed & Cabana)",
+      "Aspen Heritage Ranch (Relaxed Western Cowboy Mountain Vista)",
       "Sun-Drenched Amalfi Coast (Summer Luxury)",
       "Monaco Harbor Yacht Deck (Riviera)",
       "Modern Men: Safari Adventure (Khaki & Linen)"
@@ -59,13 +60,15 @@ export const BACKDROPS = BACKDROP_CATEGORIES.flatMap(c => c.items);
 
 const PERIODS = [
   "None (Preserve Original Style)",
+  "Cowboy Chick: Floating Collars, Studded Vests, Large Buckle, Relaxed Jeans & High-End Boots",
+  "Relaxed Cowboy Western (Vest, Hat, Jeans & Belt Buckle)",
   "Men's La Vacanza: Designer Summer Clothes (Silk Resort Shirts, Linen Shorts & Loafers)",
   "Men's La Vacanza: Baroque Italian Riviera (Printed Silk, Gold Chain & Tailored Trousers)",
   "Men's La Vacanza: Coastal Summer Knitwear (Crochet Polo, Tailored Swim Shorts & Sunglasses)",
+  "1880s Western Gunslinger (Outlaw Chic)",
   "1920s Roaring Flapper (Gatsby Style)",
   "1950s Golden Age Glamour (Audrey Vibe)",
   "1970s Studio 54 Disco (Sequin & Flare)",
-  "1880s Western Gunslinger (Outlaw Chic)",
   "1990s Seattle Grunge (Flannel & Denim)",
   "Modern Men: Yachting (Riviera Style)",
   "Modern Men: Classic Tuxedo (Black Tie)",
@@ -428,6 +431,9 @@ export function Studio({
       if (activeBackdrops.some(b => b.includes("Hotel Jerome") || b.includes("Poolside"))) {
         prompt += ` Set by the heated alpine pool terrace of historic Hotel Jerome Aspen, with luxury loungers, cabanas, and snowy mountain peaks in the background.`;
       }
+      if (activeBackdrops.some(b => b.includes("Ranch") || b.includes("Cowboy") || (b.includes("Western") && b.includes("Vista")))) {
+        prompt += ` Frame the scene in an authentic Rocky Mountain high-country ranch at golden hour with rustic timber split-rail fences, sweeping golden sagebrush pastures, snow-dusted peaks, and warm Western ranch atmosphere.`;
+      }
       if (activeBackdrops.some(b => b.includes("La Vacanza") || b.includes("Summer Clothes"))) {
         prompt += ` Frame in an opulent Mediterranean summer vacation atmosphere with terracotta sun decks, azure coastal waters, luxury yacht docks, and sun-kissed Italian Riviera elegance.`;
       }
@@ -453,7 +459,11 @@ export function Studio({
       }
 
       if (period !== "None (Preserve Original Style)") {
-        if (period.includes("La Vacanza")) {
+        if (period.includes("Cowboy Chick") || period.includes("Floating Collars") || period.includes("Studded Vests")) {
+          prompt += ` Style them in high-fashion Cowboy Chick luxury runway attire: dramatic architectural floating collars that stand away gracefully from the collarbone, a lavishly studded leather or suede vest embellished with silver and brass metallic studs and rivets, relaxed-fit vintage-washed selvedge denim jeans with effortless drape and stacking, an oversized ornate carved silver Western trophy buckle as a striking centerpiece, and luxury high-end handcrafted exotic leather Western boots with artisanal tooling and sculptural heels, fusing edgy avant-garde couture with authentic rugged Western glamour while keeping their face and pose.`;
+        } else if (period.includes("Relaxed Cowboy") || (period.includes("Cowboy") && period.includes("Vest"))) {
+          prompt += ` Style them in high-fashion Relaxed Cowboy Western attire: a tailored relaxed suede, leather, or shearling vest layered effortlessly over a rolled-sleeve chambray or pearl-snap shirt, a structured wide-brim felt cowboy hat, relaxed-fit vintage washed denim jeans with clean stacking over artisanal leather cowboy boots, and an eye-catching sculpted sterling silver Western belt buckle, radiating effortless rustic Americana and luxury Aspen ranch charm while maintaining their face and pose.`;
+        } else if (period.includes("La Vacanza")) {
           prompt += ` Style them in high-fashion Men's La Vacanza designer summer clothes: luxurious flowing baroque or pastel printed silk button-down shirt unbuttoned at the neckline, tailored crisp pleated linen shorts or breezy linen trousers, woven leather loafers or designer slides, gold jewelry, and statement luxury sunglasses, exuding effortless Mediterranean resort luxury.`;
         } else {
           prompt += ` Change their outfit to ${period} fashion style while keeping their face and pose.`;
@@ -739,6 +749,20 @@ export function Studio({
                         className="text-[10px] bg-white border border-zinc-300 px-2 py-1 uppercase tracking-wider hover:bg-zinc-100 font-semibold text-amber-900"
                       >
                         + All La Vacanza
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const ranchItem = "Aspen Heritage Ranch (Relaxed Western Cowboy Mountain Vista)";
+                          const newSelection = Array.from(new Set([...selectedBackdrops, ranchItem]));
+                          pushState({ 
+                            selectedBackdrops: newSelection,
+                            period: "Relaxed Cowboy Western (Vest, Hat, Jeans & Belt Buckle)"
+                          });
+                        }}
+                        className="text-[10px] bg-amber-50 border border-amber-300 px-2 py-1 uppercase tracking-wider hover:bg-amber-100 font-semibold text-amber-950"
+                      >
+                        🤠 + Western Ranch
                       </button>
                       <button
                         type="button"
@@ -1084,7 +1108,72 @@ export function Studio({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-2 uppercase tracking-wider">Fashion Period Remix</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-zinc-700 uppercase tracking-wider">Fashion Period / Wardrobe Remix</label>
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Featured Looks</span>
+              </div>
+
+              {/* Quick Wardrobe Selection Chips */}
+              <div className="flex flex-wrap gap-1.5 mb-2.5">
+                <button
+                  type="button"
+                  onClick={() => setPeriod("Cowboy Chick: Floating Collars, Studded Vests, Large Buckle, Relaxed Jeans & High-End Boots")}
+                  className={`text-[11px] px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
+                    period.includes("Cowboy Chick")
+                      ? 'bg-amber-950 text-amber-200 border-amber-900 font-bold shadow-xs'
+                      : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 font-medium'
+                  }`}
+                  title="Cowboy Chick: Floating Collars, Studded Vests, Large Buckle, Relaxed Jeans & High-End Boots"
+                >
+                  <span>⭐ Cowboy Chick (Floating Collars + Studded Vest + Boots)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("Relaxed Cowboy Western (Vest, Hat, Jeans & Belt Buckle)")}
+                  className={`text-[11px] px-2.5 py-1 rounded border transition-all cursor-pointer flex items-center gap-1 ${
+                    period.includes("Relaxed Cowboy")
+                      ? 'bg-amber-950 text-amber-200 border-amber-900 font-bold shadow-xs'
+                      : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200 font-medium'
+                  }`}
+                  title="Relaxed Cowboy Western: Vest, Hat, Jeans & Belt Buckle"
+                >
+                  <span>🤠 Relaxed Cowboy</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("Men's La Vacanza: Designer Summer Clothes (Silk Resort Shirts, Linen Shorts & Loafers)")}
+                  className={`text-[11px] px-2.5 py-1 rounded border transition-colors cursor-pointer ${
+                    period.includes("La Vacanza")
+                      ? 'bg-black text-white border-black font-semibold'
+                      : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200'
+                  }`}
+                >
+                  La Vacanza Summer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("Modern Men: Old Money (Quiet Luxury)")}
+                  className={`text-[11px] px-2.5 py-1 rounded border transition-colors cursor-pointer ${
+                    period.includes("Old Money")
+                      ? 'bg-black text-white border-black font-semibold'
+                      : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200'
+                  }`}
+                >
+                  Old Money
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPeriod("1880s Western Gunslinger (Outlaw Chic)")}
+                  className={`text-[11px] px-2.5 py-1 rounded border transition-colors cursor-pointer ${
+                    period.includes("Gunslinger")
+                      ? 'bg-black text-white border-black font-semibold'
+                      : 'bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200'
+                  }`}
+                >
+                  1880s Gunslinger
+                </button>
+              </div>
+
               <select 
                 value={period} 
                 onChange={e => setPeriod(e.target.value)}

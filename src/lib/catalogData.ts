@@ -108,6 +108,42 @@ export const INITIAL_CATALOG_ITEMS: CatalogItem[] = [
     placementReceipt: 'AF-2026-9118',
     publication: "Harper's Bazaar",
     createdAt: new Date('2026-03-10').toISOString()
+  },
+  {
+    id: 'cat-7',
+    userId: 'editor-aspen-07',
+    title: 'Roaring Fork Relaxed Cowboy Western Ensemble',
+    designer: 'Wyatt Sterling',
+    brand: 'Aspen Heritage Leather Co.',
+    collection: 'High Country Western Ranch 2026',
+    season: 'Autumn 2026',
+    category: 'Heritage & Western',
+    price: '$2,450',
+    materials: 'Saddle Suede Vest, Beaver Felt Cowboy Hat, Vintage Relaxed Denim Jeans, Hand-Carved Sterling Silver Trophy Buckle',
+    description: 'Effortless relaxed Western cowboy silhouette featuring a tailored suede vest, classic wide-brim cowboy hat, vintage selvedge relaxed-fit denim jeans, and an artisan-carved silver trophy buckle.',
+    imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop',
+    isPlacement: true,
+    placementReceipt: 'AF-2026-9934',
+    publication: 'Aspen Fashion (Official)',
+    createdAt: new Date('2026-03-15').toISOString()
+  },
+  {
+    id: 'cat-8',
+    userId: 'editor-aspen-08',
+    title: 'The Cowboy Chick Studded Vest & Floating Collar Ensemble',
+    designer: 'Sienna Sterling',
+    brand: 'Aspen Rodeo Haute Couture',
+    collection: 'Avant-Western Runway 2026',
+    season: 'Autumn 2026',
+    category: 'Heritage & Western',
+    price: '$3,850',
+    materials: 'Silver-Studded Italian Calfskin Vest, Floating Architectural Collar, Vintage Selvedge Relaxed Denim Jeans, Hand-Chiseled Oversized Sterling Buckle, Bespoke Artisan Leather Western Boots',
+    description: 'A showstopping luxury Western silhouette combining an avant-garde floating architectural collar, heavily studded leather vest, relaxed draped denim jeans, oversized trophy buckle, and handcrafted high-end cowboy boots.',
+    imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop',
+    isPlacement: true,
+    placementReceipt: 'AF-2026-9942',
+    publication: 'COWBOY CHICK (Official)',
+    createdAt: new Date('2026-03-16').toISOString()
   }
 ];
 

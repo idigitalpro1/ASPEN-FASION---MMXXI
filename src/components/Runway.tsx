@@ -137,6 +137,8 @@ export function Runway({ generatedImage }: RunwayProps) {
                 {/* Quick Presets */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {[
+                    { label: "Cowboy Chick Couture", prompt: "An avant-garde high-fashion Western runway walk featuring dramatic floating collars, metallic studded leather vests, oversized sculpted silver belt buckles, relaxed-fit denim jeans, and high-end handcrafted artisan Western boots under dramatic runway lighting" },
+                    { label: "Relaxed Cowboy Western", prompt: "A cinematic luxury Western runway walk featuring relaxed cowboy couture: tailored suede and leather vests, wide-brim felt cowboy hats, relaxed-fit vintage denim jeans, and statement sculpted silver belt buckles against an Aspen ranch vista" },
                     { label: "Men's La Vacanza", prompt: "A sun-drenched Italian Riviera runway walk featuring Men's La Vacanza designer summer clothes: printed silk resort shirts unbuttoned, tailored linen shorts, statement sunglasses, and models walking past coastal yachts" },
                     { label: "Après-Ski Aspen", prompt: "A slow-motion luxury fashion runway walk in Aspen with models wearing couture shearling and fur puffers against snow-capped peaks" },
                     { label: "Summiting 14ers", prompt: "A cinematic high-fashion runway trek atop a 14,000ft Colorado alpine summit with models in futuristic mountaineering couture" },
