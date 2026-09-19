@@ -144,6 +144,42 @@ export const INITIAL_CATALOG_ITEMS: CatalogItem[] = [
     placementReceipt: 'AF-2026-9942',
     publication: 'COWBOY CHICK (Official)',
     createdAt: new Date('2026-03-16').toISOString()
+  },
+  {
+    id: 'cat-9',
+    userId: 'editor-aspen-09',
+    title: 'Capri Riviera Sculptural Cutout Swimsuit & Sheer Pareo',
+    designer: 'Gianluigi D’Este',
+    brand: 'Amalfi Resort Atelier',
+    collection: 'Mediterranean Sunburst 2026',
+    season: 'Summer 2026',
+    category: 'Swimsuit & Resort',
+    price: '$1,450',
+    materials: 'Italian Shimmering Lycra, 24K Gold Hardware Rings, Sheer Silk Chiffon Pareo',
+    description: 'Bespoke one-piece swimsuit engineered with asymmetric geometric cutouts, hand-dipped gold harness rings, and a flowing sheer silk pareo designed for poolside cabana lounging.',
+    imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1000&auto=format&fit=crop',
+    isPlacement: true,
+    placementReceipt: 'AF-2026-9955',
+    publication: "MEN'S LA VACANZA",
+    createdAt: new Date('2026-03-17').toISOString()
+  },
+  {
+    id: 'cat-10',
+    userId: 'editor-aspen-10',
+    title: 'Chantilly Lace Corset & Mulberry Silk Boudoir Gown',
+    designer: 'Camille De La Tour',
+    brand: 'Maison De Soie Paris',
+    collection: 'Intimate Couture Nocturne',
+    season: 'Autumn 2026',
+    category: 'Lingerie & Silk',
+    price: '$2,350',
+    materials: 'French Chantilly Lace, 25-Momme Mulberry Silk Satin, Whalebone Boning, Seed Pearls',
+    description: 'An architectural haute lingerie ensemble featuring a structured French Chantilly lace corset with delicate pearl embroidery, layered over a fluid midnight silk boudoir slip gown.',
+    imageUrl: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000&auto=format&fit=crop',
+    isPlacement: true,
+    placementReceipt: 'AF-2026-9968',
+    publication: 'Aspen Fashion (Official)',
+    createdAt: new Date('2026-03-18').toISOString()
   }
 ];
 

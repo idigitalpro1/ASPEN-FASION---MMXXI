@@ -4,7 +4,8 @@ import {
   Award, Sparkles, BookOpen, Layers, ShieldCheck, FileText, ExternalLink,
   RefreshCw, Twitter, Pin, Copy, X as CloseIcon, Printer, ArrowLeft, Scissors,
   Edit3, Type, Calendar, RotateCcw, ChevronDown, ChevronUp,
-  Sliders, Zap, Crosshair, Filter
+  Sliders, Zap, Crosshair, Filter,
+  Mail, Phone, MapPin, QrCode, Eye, EyeOff, UserCheck
 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { saveCreation } from '../lib/db';
@@ -265,6 +266,51 @@ export function Magazine({
   const [copiedLink, setCopiedLink] = useState(false);
   const [isPrintReadyMode, setIsPrintReadyMode] = useState(false);
   const [showCropMarks, setShowCropMarks] = useState(true);
+
+  // Model Focus & Text Clearance Mode (to avoid running too much text over models)
+  const [modelFocusMode, setModelFocusMode] = useState<'editorial' | 'clean'>('editorial');
+
+  // Contact Card Close-Up Modal State
+  const [isContactCardModalOpen, setIsContactCardModalOpen] = useState(false);
+  const [copiedContactType, setCopiedContactType] = useState<'email' | 'phone' | null>(null);
+
+  // Copy contact info to clipboard
+  const handleCopyContactInfo = (type: 'email' | 'phone', text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedContactType(type);
+    setTimeout(() => {
+      setCopiedContactType(null);
+    }, 2500);
+  };
+
+  // Download official vCard file for Aspen Fashion
+  const handleDownloadVCard = () => {
+    const vCardData = [
+      'BEGIN:VCARD',
+      'VERSION:3.0',
+      'N:Sweeney;Patrick;Henry;;',
+      'FN:Patrick Henry Sweeney',
+      'ORG:Aspen Fashion Magazine / Fleurish Publishing House',
+      'TITLE:Publisher & Editor-in-Chief',
+      'TEL;TYPE=WORK,VOICE:+1-970-925-3274',
+      'TEL;TYPE=CELL:+1-970-925-3348',
+      'EMAIL;TYPE=PREF,INTERNET:editorial@aspenfashion.com',
+      'EMAIL;TYPE=WORK:publisher@aspenfashion.com',
+      'URL:https://aspenfashion.com',
+      'ADR;TYPE=WORK:;;315 E Dean St, Suite 400;Aspen;CO;81611;United States',
+      'NOTE:Official Press & Editorial Bureau for Aspen Fashion Magazine.',
+      'REV:2026-03-18T00:00:00Z',
+      'END:VCARD'
+    ].join('\r\n');
+
+    const blob = new Blob([vCardData], { type: 'text/vcard;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Patrick-Henry-Sweeney-Aspen-Fashion.vcf';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Inline Text Editor & Customization State
   const [isInlineEditorOpen, setIsInlineEditorOpen] = useState(false);
@@ -1185,19 +1231,35 @@ export function Magazine({
     const renderDefaultMasthead = () => {
       if (selectedMagazine === 'ASPEN FASHION') {
         return (
-          <>
-            <h1 className="text-7xl md:text-[8rem] font-serif text-white tracking-tighter font-bold opacity-100 leading-[0.8]" style={{ textShadow: '0 10px 30px rgba(0,0,0,0.9), 0 2px 10px rgba(0,0,0,0.8)', textAlign: 'center', width: '100%' }}>
-              ASPEN
-            </h1>
-            {renderMastheadBylineAndDate()}
-            <div className="flex items-center gap-4 mt-4">
-              <div className="h-[3px] flex-1 bg-white/80 shadow-lg" />
-              <h2 className="text-4xl md:text-5xl font-serif text-white tracking-[0.5em] uppercase font-bold" style={{ textShadow: '0 4px 15px rgba(0,0,0,0.9)' }}>
-                FASHION
-              </h2>
-              <div className="h-[3px] flex-1 bg-white/80 shadow-lg" />
+          <div className="w-full px-3 sm:px-6 flex flex-col items-center select-none pointer-events-auto">
+            {/* Top Micro Slug */}
+            <div className="flex items-center justify-center gap-2 mb-1 text-[8px] sm:text-[9.5px] uppercase font-bold tracking-[0.35em] text-amber-300 drop-shadow-md">
+              <span>ASPEN ATELIER</span>
+              <span className="opacity-40">·</span>
+              <span>HAUTE COUTURE</span>
+              <span className="opacity-40">·</span>
+              <span>EST. 2026</span>
             </div>
-          </>
+
+            {/* Pinned Aspen Fashion Masthead - Compact & Elegant to leave plenty of vertical room for model */}
+            <h1 
+              className="text-4xl sm:text-6xl md:text-7xl font-serif text-white tracking-[0.16em] font-bold uppercase leading-none text-center flex items-center justify-center gap-2 sm:gap-3 drop-shadow-2xl" 
+              style={{ 
+                fontFamily: '"Playfair Display", Didot, "Cinzel", Georgia, serif', 
+                textShadow: '0 4px 22px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.9)' 
+              }}
+            >
+              <span className="text-white drop-shadow-xl">ASPEN</span>
+              <span className="text-amber-300 font-light tracking-[0.24em] drop-shadow-xl">FASHION</span>
+            </h1>
+
+            {/* Sub-line with Byline & Cover Date */}
+            <div className="mt-1.5 flex items-center justify-center gap-2.5 text-white/95 text-[9px] sm:text-[10.5px] font-sans uppercase tracking-[0.18em] font-semibold drop-shadow-md">
+              <div className="h-[1px] w-6 sm:w-14 bg-amber-400/80" />
+              <span>{coverDate || 'AUTUMN 2026'} · {issueNumber || 'VOL. XXIV'}</span>
+              <div className="h-[1px] w-6 sm:w-14 bg-amber-400/80" />
+            </div>
+          </div>
         );
       }
 
@@ -1256,125 +1318,94 @@ export function Magazine({
 
     return (
       <>
-        {/* Top Bar: Photo Description */}
-        <div className="absolute top-8 left-8 z-10">
-          <div className="bg-black/40 backdrop-blur-sm p-3 border-l-2 border-yellow-400 max-w-[200px]">
-            <div className="text-white text-[9px] md:text-[10px] uppercase tracking-[0.2em] leading-relaxed" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
-              <span className="font-bold text-yellow-400 block mb-1">PHOTO DESCRIPTION:</span>
-              Exclusive editorial look capturing the essence of modern elegance and timeless style.
-            </div>
-          </div>
-        </div>
-        {/* Centered V2 Block */}
-        <div className="absolute top-6 left-0 right-0 flex justify-center z-20">
-          <div className="bg-black/60 backdrop-blur-md px-4 py-1 border border-white/30 shadow-2xl">
-            <span className="text-white text-[10px] uppercase font-bold tracking-[0.4em]">V2 / EXCLUSIVE</span>
+        {/* Top Left: Discreet Tag */}
+        <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-30">
+          <div className="bg-black/65 backdrop-blur-xs px-2.5 py-1 border border-white/20 text-white text-[9px] uppercase font-bold tracking-[0.2em] shadow-lg">
+            {selectedMagazine === 'ASPEN FASHION' ? 'ROCKY MT. BUREAU' : 'EXCLUSIVE LOOK'}
           </div>
         </div>
 
-        {/* Masthead (Moved to Top Center) */}
-        <div className="absolute top-20 left-0 right-0 flex flex-col items-center justify-center z-10 select-none text-center">
+        {/* Top Right: Pinned Editorial Contact Card Close-Up Badge */}
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsContactCardModalOpen(true);
+            }}
+            className="group/contact flex items-center gap-1.5 bg-black/85 hover:bg-black text-white px-2.5 py-1 rounded border border-amber-400/90 shadow-2xl backdrop-blur-md cursor-pointer transition-all hover:scale-105 active:scale-95"
+            title="Open Aspen Fashion Editorial Desk Contact Card Close-Up"
+          >
+            <Mail className="w-3.5 h-3.5 text-amber-300 group-hover/contact:text-amber-200 transition-colors" />
+            <span className="text-[9px] uppercase font-bold tracking-wider text-amber-200">
+              Contact Card 🔍
+            </span>
+          </button>
+        </div>
+
+        {/* Masthead: Pinned directly to the top edge for Aspen Fashion to give plenty of clearance so it never runs over the model */}
+        <div 
+          className={`absolute left-0 right-0 z-20 flex flex-col items-center justify-center select-none text-center ${
+            selectedMagazine === 'ASPEN FASHION' ? 'top-3 sm:top-4' : 'top-14 sm:top-16'
+          }`}
+        >
           {renderDefaultMasthead()}
         </div>
 
-        {/* Left Side: Magazine Titles with Direct Inline Editing */}
-        <div className="absolute top-1/2 -translate-y-1/2 left-8 z-10 flex flex-col gap-8 max-w-[200px] md:max-w-[250px] mt-16">
-          <div className="group/item cursor-default">
-            <InlineEditableText
-              value={headlineText}
-              onChange={(v) => { setHeadlineText(v); setHasCustomizedText(true); }}
-              tag="h3"
-              className="text-white font-serif text-lg md:text-xl leading-tight tracking-tight block"
-              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
-              placeholder="Headline 1"
-              title="Click to edit headline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-            <div className="h-[1px] w-0 group-hover/item:w-full bg-white transition-all duration-300 mt-1" />
-            <InlineEditableText
-              value={subheadlineText}
-              onChange={(v) => { setSubheadlineText(v); setHasCustomizedText(true); }}
-              tag="p"
-              className="text-white/80 text-[11px] md:text-sm sans-serif uppercase tracking-[0.15em] mt-1.5 block"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
-              placeholder="Subheadline 1"
-              title="Click to edit subheadline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-          </div>
+        {/* Left Flank: Magazine Headlines (Tucked neatly in lower corner card to avoid running over model) */}
+        {modelFocusMode !== 'clean' && (
+          <div className="absolute bottom-20 left-4 sm:left-6 z-20 max-w-[200px] sm:max-w-[230px]">
+            <div className="bg-black/55 backdrop-blur-xs p-3 rounded-sm border-l-2 border-amber-400 shadow-2xl space-y-2.5">
+              <div className="group/item cursor-default">
+                <InlineEditableText
+                  value={headlineText}
+                  onChange={(v) => { setHeadlineText(v); setHasCustomizedText(true); }}
+                  tag="h3"
+                  className="text-white font-serif text-sm sm:text-base leading-tight font-bold tracking-tight block"
+                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+                  placeholder="Headline 1"
+                  title="Click to edit headline"
+                  isInlineEditingAllowed={isInlineEditingAllowed}
+                />
+                <InlineEditableText
+                  value={subheadlineText}
+                  onChange={(v) => { setSubheadlineText(v); setHasCustomizedText(true); }}
+                  tag="p"
+                  className="text-amber-200/90 text-[10px] sm:text-xs font-sans uppercase tracking-[0.12em] mt-0.5 block"
+                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+                  placeholder="Subheadline 1"
+                  title="Click to edit subheadline"
+                  isInlineEditingAllowed={isInlineEditingAllowed}
+                />
+              </div>
 
-          <div className="group/item cursor-default">
-            <InlineEditableText
-              value={secondaryHeadline}
-              onChange={(v) => { setSecondaryHeadline(v); setHasCustomizedText(true); }}
-              tag="h3"
-              className="text-white font-serif text-lg md:text-xl leading-tight tracking-tight text-amber-300 block"
-              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
-              placeholder="Headline 2"
-              title="Click to edit headline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-            <div className="h-[1px] w-0 group-hover/item:w-full bg-amber-300 transition-all duration-300 mt-1" />
-            <InlineEditableText
-              value={secondarySubheadline}
-              onChange={(v) => { setSecondarySubheadline(v); setHasCustomizedText(true); }}
-              tag="p"
-              className="text-white/80 text-[11px] md:text-sm sans-serif uppercase tracking-[0.15em] mt-1.5 block"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
-              placeholder="Subheadline 2"
-              title="Click to edit subheadline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-          </div>
+              <div className="h-[1px] bg-white/20" />
 
-          <div className="group/item cursor-default">
-            <InlineEditableText
-              value={tertiaryHeadline}
-              onChange={(v) => { setTertiaryHeadline(v); setHasCustomizedText(true); }}
-              tag="h3"
-              className="text-white font-serif text-lg md:text-xl leading-tight tracking-tight block"
-              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
-              placeholder="Headline 3"
-              title="Click to edit headline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-            <div className="h-[1px] w-0 group-hover/item:w-full bg-white transition-all duration-300 mt-1" />
-            <InlineEditableText
-              value={tertiarySubheadline}
-              onChange={(v) => { setTertiarySubheadline(v); setHasCustomizedText(true); }}
-              tag="p"
-              className="text-white/80 text-[11px] md:text-sm sans-serif uppercase tracking-[0.15em] mt-1.5 block"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
-              placeholder="Subheadline 3"
-              title="Click to edit subheadline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
+              <div className="group/item cursor-default">
+                <InlineEditableText
+                  value={secondaryHeadline}
+                  onChange={(v) => { setSecondaryHeadline(v); setHasCustomizedText(true); }}
+                  tag="h3"
+                  className="text-white font-serif text-sm sm:text-base leading-tight font-bold tracking-tight text-amber-300 block"
+                  style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
+                  placeholder="Headline 2"
+                  title="Click to edit headline"
+                  isInlineEditingAllowed={isInlineEditingAllowed}
+                />
+                <InlineEditableText
+                  value={secondarySubheadline}
+                  onChange={(v) => { setSecondarySubheadline(v); setHasCustomizedText(true); }}
+                  tag="p"
+                  className="text-white/80 text-[10px] sm:text-xs font-sans uppercase tracking-[0.12em] mt-0.5 block"
+                  style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
+                  placeholder="Subheadline 2"
+                  title="Click to edit subheadline"
+                  isInlineEditingAllowed={isInlineEditingAllowed}
+                />
+              </div>
+            </div>
           </div>
-
-          <div className="group/item cursor-default">
-            <InlineEditableText
-              value={quaternaryHeadline}
-              onChange={(v) => { setQuaternaryHeadline(v); setHasCustomizedText(true); }}
-              tag="h3"
-              className="text-white font-serif text-lg md:text-xl leading-tight tracking-tight text-yellow-400 block"
-              style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}
-              placeholder="Headline 4"
-              title="Click to edit headline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-            <div className="h-[1px] w-0 group-hover/item:w-full bg-yellow-400 transition-all duration-300 mt-1" />
-            <InlineEditableText
-              value={quaternarySubheadline}
-              onChange={(v) => { setQuaternarySubheadline(v); setHasCustomizedText(true); }}
-              tag="p"
-              className="text-white/80 text-[11px] md:text-sm sans-serif uppercase tracking-[0.15em] mt-1.5 block"
-              style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}
-              placeholder="Subheadline 4"
-              title="Click to edit subheadline"
-              isInlineEditingAllowed={isInlineEditingAllowed}
-            />
-          </div>
-        </div>
+        )}
 
         {/* Quote / Highlight */}
         <div className="absolute bottom-8 left-8 right-24 z-10">
@@ -1703,6 +1734,33 @@ export function Magazine({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Model Focus & Clearance Toggle (Avoid running text over models) */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setModelFocusMode(modelFocusMode === 'clean' ? 'editorial' : 'clean')}
+                  className={`px-2.5 py-1 text-[11px] uppercase tracking-wider font-semibold rounded-xs border transition-all flex items-center gap-1.5 cursor-pointer ${
+                    modelFocusMode === 'clean'
+                      ? 'bg-zinc-900 text-white border-zinc-900 shadow-xs'
+                      : 'bg-white text-zinc-700 border-zinc-300 hover:bg-zinc-100'
+                  }`}
+                  title={modelFocusMode === 'clean' ? 'Currently hiding side text to give model 100% breathing room' : 'Click to hide side text and give model clean focus'}
+                >
+                  {modelFocusMode === 'clean' ? <Eye className="w-3.5 h-3.5 text-amber-300" /> : <EyeOff className="w-3.5 h-3.5 text-zinc-600" />}
+                  <span>{modelFocusMode === 'clean' ? 'Model Focus: Clean' : 'Text: Editorial'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsContactCardModalOpen(true)}
+                  className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-black text-[11px] font-bold uppercase tracking-wider rounded-xs shadow-xs flex items-center gap-1.5 cursor-pointer transition-all hover:scale-102"
+                  title="View Aspen Fashion Editorial Desk Contact Card Close-Up"
+                >
+                  <Mail className="w-3.5 h-3.5 text-black" />
+                  <span>Contact Card Close-Up</span>
+                </button>
               </div>
 
               {/* Editor Drawer Toggle & Reset */}
@@ -2351,6 +2409,155 @@ export function Magazine({
               <span>
                 <strong>Tip:</strong> Tap <strong>Download Cover</strong> on the Magazine toolbar to save the high-res typography graphics to attach directly to your tweet or pin!
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDITORIAL CONTACT CARD CLOSE-UP MODAL */}
+      {isContactCardModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+          onClick={() => setIsContactCardModalOpen(false)}
+        >
+          <div 
+            className="relative max-w-lg w-full bg-[#121214] text-zinc-100 rounded-sm shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border-2 border-amber-400/60 p-6 sm:p-8 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Corner Ornamental Accents */}
+            <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-amber-400 pointer-events-none" />
+            <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-amber-400 pointer-events-none" />
+            <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-amber-400 pointer-events-none" />
+            <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-amber-400 pointer-events-none" />
+
+            {/* Close Button */}
+            <button
+              onClick={() => setIsContactCardModalOpen(false)}
+              className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors p-1.5 rounded-full bg-zinc-800/80 hover:bg-zinc-700 cursor-pointer z-10"
+              aria-label="Close Contact Card modal"
+            >
+              <CloseIcon className="w-4 h-4" />
+            </button>
+
+            {/* Inside Heavy-Stock Card Inset */}
+            <div className="p-5 sm:p-6 border border-amber-400/30 rounded-xs bg-gradient-to-b from-zinc-900/95 via-zinc-950/95 to-black relative">
+              {/* Header Crest & Magazine Title */}
+              <div className="flex flex-col items-center text-center pb-4 border-b border-amber-400/30">
+                <div className="w-10 h-10 rounded-full bg-amber-400/10 border border-amber-400/60 flex items-center justify-center text-amber-300 mb-2 shadow-inner">
+                  <Award className="w-5 h-5 text-amber-300" />
+                </div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.3em] text-amber-400/90 font-bold mb-0.5">
+                  Editorial Desk & Press Credential
+                </div>
+                <h2 
+                  className="text-2xl sm:text-3xl font-serif text-white tracking-[0.18em] font-bold uppercase leading-none"
+                  style={{ fontFamily: '"Playfair Display", Didot, serif', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}
+                >
+                  <span>ASPEN</span> <span className="text-amber-300 font-light">FASHION</span>
+                </h2>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-[0.2em] mt-1 font-medium">
+                  Fleurish Publishing House · Rocky Mountain Atelier
+                </p>
+              </div>
+
+              {/* Publisher & Critic Profile Section */}
+              <div className="py-4 border-b border-zinc-800 flex items-center gap-4">
+                <div className="w-14 h-14 rounded-sm bg-zinc-800 border border-amber-400/40 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-md">
+                  <div className="text-amber-300 font-serif text-xl font-bold">PHS</div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-serif text-white font-bold tracking-wide leading-snug">
+                    Patrick Henry Sweeney
+                  </h3>
+                  <div className="text-xs text-amber-300/90 font-sans uppercase tracking-wider font-semibold">
+                    Publisher & Editor-in-Chief
+                  </div>
+                  <div className="text-[11px] text-zinc-400">
+                    Lead Fashion Critic & Atelier Director
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information Rows */}
+              <div className="py-4 space-y-3 text-xs">
+                {/* Email Row */}
+                <div className="flex items-center justify-between gap-3 p-2 bg-zinc-900/60 rounded border border-zinc-800/80 hover:border-amber-400/40 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Mail className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Direct Editorial Email</div>
+                      <div className="text-white font-mono text-xs truncate">editorial@aspenfashion.com</div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyContactInfo('email', 'editorial@aspenfashion.com')}
+                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-amber-300 text-[10px] uppercase tracking-wider font-bold rounded cursor-pointer transition-colors flex items-center gap-1 flex-shrink-0 border border-amber-400/30"
+                  >
+                    {copiedContactType === 'email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedContactType === 'email' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+
+                {/* Telephone Row */}
+                <div className="flex items-center justify-between gap-3 p-2 bg-zinc-900/60 rounded border border-zinc-800/80 hover:border-amber-400/40 transition-colors">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Phone className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Aspen Atelier Desk Phone</div>
+                      <div className="text-white font-mono text-xs">+1 (970) 925-3274 <span className="text-zinc-500 font-sans">(925-FASH)</span></div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyContactInfo('phone', '+1-970-925-3274')}
+                    className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-amber-300 text-[10px] uppercase tracking-wider font-bold rounded cursor-pointer transition-colors flex items-center gap-1 flex-shrink-0 border border-amber-400/30"
+                  >
+                    {copiedContactType === 'phone' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedContactType === 'phone' ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+
+                {/* Address Row */}
+                <div className="flex items-start gap-2.5 p-2 bg-zinc-900/60 rounded border border-zinc-800/80">
+                  <MapPin className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-[11px] leading-relaxed">
+                    <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Bureau Headquarters</div>
+                    <div className="text-zinc-200">Aspen Atelier, 315 East Dean Street, Suite 400</div>
+                    <div className="text-zinc-400">Aspen, Colorado 81611 · United States</div>
+                  </div>
+                </div>
+
+                {/* Press Credential & Verified Seal */}
+                <div className="flex items-center justify-between pt-2 text-[10px] text-zinc-400 font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>PRESS ID: AF-PRESS-2026-CO-001</span>
+                  </div>
+                  <div className="text-amber-400 font-bold">
+                    VERIFIED ATELIER DESK
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-4 pt-4 border-t border-zinc-800 flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleDownloadVCard}
+                  className="flex-1 py-2.5 px-3 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black font-serif font-bold text-xs uppercase tracking-wider rounded-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5 text-black" />
+                  <span>Download vCard Contact</span>
+                </button>
+                <a
+                  href="mailto:editorial@aspenfashion.com?subject=Aspen%20Fashion%20Editorial%20Inquiry"
+                  className="py-2.5 px-4 bg-zinc-800 hover:bg-zinc-700 text-white font-sans text-xs uppercase tracking-wider rounded-xs transition-colors border border-zinc-700 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Send Direct Email</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>

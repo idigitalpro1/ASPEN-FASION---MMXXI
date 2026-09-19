@@ -29,6 +29,16 @@ export const BACKDROP_CATEGORIES = [
     ]
   },
   {
+    category: "Swimwear & Intimates Luxury",
+    items: [
+      "Aspen Heated Alpine Poolside (Steaming Azure Water, Snow-Capped Mountain Vista & Fur Sunbed)",
+      "Capri Clifftop Infinity Pool (Mediterranean Sea Horizon & Luxury White Cabana)",
+      "Milano Penthouse Boudoir (Mulberry Silk Drapes, Velvet Chaise & Soft Golden Sunlight)",
+      "St. Tropez Private Beach Club (White Teak Cabana, Turquoise Waves & Champagne Bar)",
+      "Amalfi Coast Private Grotto (Limestone Cliff Sun Deck & Emerald Ocean)"
+    ]
+  },
+  {
     category: "Galas, Festivities & Casino",
     items: [
       "Monte Carlo Casino (High Stakes Black-Tie & Golden Glamour)",
@@ -65,6 +75,11 @@ const PERIODS = [
   "Men's La Vacanza: Designer Summer Clothes (Silk Resort Shirts, Linen Shorts & Loafers)",
   "Men's La Vacanza: Baroque Italian Riviera (Printed Silk, Gold Chain & Tailored Trousers)",
   "Men's La Vacanza: Coastal Summer Knitwear (Crochet Polo, Tailored Swim Shorts & Sunglasses)",
+  "Haute Couture Swimsuit: Metallic Designer Bikini, Sheer Silk Pareo & Resort Gold Body Jewelry",
+  "Alpine Heated Pool Swimwear: High-Neck Sculptural One-Piece, Oversized Shades & Faux Fur Wrap",
+  "Men's Riviera Swimwear: Italian Tailored Swim Trunks, Open Linen Shirt & Classic Loafers",
+  "Haute Lingerie & Silk Loungewear: French Chantilly Lace Corset, Satin Slip Dress & Sheer Robe",
+  "Boudoir Atelier Lingerie: Embroidered Bralette, High-Waist Sheer Details & Delicate Robe",
   "1880s Western Gunslinger (Outlaw Chic)",
   "1920s Roaring Flapper (Gatsby Style)",
   "1950s Golden Age Glamour (Audrey Vibe)",

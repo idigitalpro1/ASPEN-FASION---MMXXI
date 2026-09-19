@@ -19,8 +19,9 @@ import { Login } from './components/Login';
 import { SubscribeModal } from './components/SubscribeModal';
 import { Catalog } from './components/Catalog';
 import { PlacementModal } from './components/PlacementModal';
-import { Camera, BookOpen, Image as ImageIcon, Mic, Video, Layers, Award } from 'lucide-react';
+import { Camera, BookOpen, Image as ImageIcon, Mic, Video, Layers, Award, Play, Pause, Repeat } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { runwayAudio, RunwayAudioState } from './lib/runwayAudio';
 
 const INITIAL_GALLERY: GalleryItem[] = [
   {
@@ -71,6 +72,15 @@ export default function App() {
   const [isSubscribeModalOpen, setIsSubscribeModalOpen] = useState(false);
   const [isPlacementModalOpen, setIsPlacementModalOpen] = useState(false);
   const [placementTargetImage, setPlacementTargetImage] = useState<string | null>(null);
+
+  // Global Runway Audio state (for continuous vibe music playback across tabs)
+  const [runwayAudioState, setRunwayAudioState] = useState<RunwayAudioState>(runwayAudio.getState());
+
+  useEffect(() => {
+    return runwayAudio.subscribe((st) => {
+      setRunwayAudioState({ ...st });
+    });
+  }, []);
 
   const handleRemix = (url: string) => {
     setRemixImageUrl(url);
@@ -233,6 +243,39 @@ export default function App() {
                 <h1 className="text-xl sm:text-2xl font-serif uppercase tracking-widest font-bold leading-none">ASPEN FASHION</h1>
               </div>
               <div className="flex items-center gap-3">
+                {/* Runway Continuous Vibe Audio Pill */}
+                {runwayAudioState.soundtrackUrl && (runwayAudioState.isPlaying || runwayAudioState.isLooping) && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 text-white rounded-full text-xs shadow-md border border-amber-500/50">
+                    <button
+                      onClick={() => setActiveTab('runway')}
+                      className="flex items-center gap-1.5 hover:text-amber-300 transition-colors cursor-pointer"
+                      title="Currently playing Runway soundtrack. Click to switch to Runway tab."
+                    >
+                      <span className="relative flex h-2 w-2">
+                        {runwayAudioState.isPlaying && (
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                        )}
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${runwayAudioState.isPlaying ? 'bg-amber-400' : 'bg-zinc-500'}`}></span>
+                      </span>
+                      <span className="font-serif font-bold uppercase tracking-wider text-[10px] hidden sm:inline">Runway:</span>
+                      <span className="text-[11px] font-medium text-amber-200 truncate max-w-[90px] sm:max-w-[130px]">{runwayAudioState.vibe.name}</span>
+                      {runwayAudioState.isLooping && (
+                        <span className="flex items-center gap-0.5 text-[9px] px-1 py-0.2 bg-amber-400/20 text-amber-300 font-mono rounded font-bold" title="Music looping enabled">
+                          <Repeat className="w-2.5 h-2.5" />
+                          <span>LOOP</span>
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => runwayAudio.togglePlay()}
+                      className="p-1 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                      title={runwayAudioState.isPlaying ? 'Pause runway music' : 'Resume runway music'}
+                    >
+                      {runwayAudioState.isPlaying ? <Pause className="w-3 h-3 text-amber-300" /> : <Play className="w-3 h-3 text-zinc-300" />}
+                    </button>
+                  </div>
+                )}
+
                 <button
                   onClick={() => handleOpenPlacementModal()}
                   className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-black text-xs font-serif uppercase tracking-wider font-bold rounded-full shadow-sm transition-all cursor-pointer"

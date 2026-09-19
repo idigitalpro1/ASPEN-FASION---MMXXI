@@ -221,10 +221,13 @@ export function Catalog({
             className="px-3 py-2 border border-zinc-300 text-xs bg-white text-zinc-800 font-medium focus:outline-none focus:border-black"
           >
             <option value="All">All Categories</option>
+            <option value="Swimsuit & Resort">Swimsuit & Resort</option>
+            <option value="Lingerie & Silk">Lingerie & Silk</option>
             <option value="Outerwear">Outerwear</option>
             <option value="Eveningwear">Eveningwear</option>
             <option value="Red Carpet">Red Carpet</option>
             <option value="Streetwear">Streetwear</option>
+            <option value="Heritage & Western">Heritage & Western</option>
           </select>
 
           {/* Verified Placement Toggle */}
@@ -710,9 +713,12 @@ export function Catalog({
                     className="w-full px-3 py-1.5 border border-zinc-300 text-xs bg-white focus:outline-none focus:border-black"
                   >
                     <option value="Outerwear">Outerwear</option>
+                    <option value="Swimsuit & Resort">Swimsuit & Resort</option>
+                    <option value="Lingerie & Silk">Lingerie & Silk</option>
                     <option value="Eveningwear">Eveningwear</option>
                     <option value="Red Carpet">Red Carpet</option>
                     <option value="Streetwear">Streetwear</option>
+                    <option value="Heritage & Western">Heritage & Western</option>
                   </select>
                 </div>
                 <div>
